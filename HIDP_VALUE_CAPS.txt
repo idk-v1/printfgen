@@ -1,0 +1,46 @@
+typedef struct _HIDP_VALUE_CAPS
+{
+    USAGE    UsagePage;
+    UCHAR    ReportID;
+    BOOLEAN  IsAlias;
+
+    USHORT   BitField;
+    USHORT   LinkCollection;   // A unique internal index pointer
+
+    USAGE    LinkUsage;
+    USAGE    LinkUsagePage;
+
+    BOOLEAN  IsRange;
+    BOOLEAN  IsStringRange;
+    BOOLEAN  IsDesignatorRange;
+    BOOLEAN  IsAbsolute;
+
+    BOOLEAN  HasNull;        // Does this channel have a null report   union
+    UCHAR    Reserved;
+    USHORT   BitSize;        // How many bits are devoted to this value?
+
+    USHORT   ReportCount;    // See Note below.  Usually set to 1.
+    USHORT   Reserved2[5];
+
+    ULONG    UnitsExp;
+    ULONG    Units;
+
+    LONG     LogicalMin,       LogicalMax;
+    LONG     PhysicalMin,      PhysicalMax;
+
+    union {
+        struct {
+            USAGE    UsageMin,         UsageMax;
+            USHORT   StringMin,        StringMax;
+            USHORT   DesignatorMin,    DesignatorMax;
+            USHORT   DataIndexMin,     DataIndexMax;
+        } Range;
+
+        struct {
+            USAGE    Usage,            Reserved1;
+            USHORT   StringIndex,      Reserved2;
+            USHORT   DesignatorIndex,  Reserved3;
+            USHORT   DataIndex,        Reserved4;
+        } NotRange;
+    };
+} HIDP_VALUE_CAPS, *PHIDP_VALUE_CAPS;
