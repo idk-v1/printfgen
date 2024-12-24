@@ -1,26 +1,15 @@
 #pragma once
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct Line
-{
-	char* str;
-	uint64_t length;
-} Line;
-
-typedef struct TextFile
-{
-	Line* lines;
-	uint64_t lineCount;
-} TextFile;
+typedef uint8_t byte;
 
 typedef struct File
 {
-	uint8_t* data;
+	byte* data;
 	uint64_t size;
 } File;
 
@@ -35,7 +24,7 @@ static File readFile(const char* name)
 		f.size = ftell(file);
 		fseek(file, 0, SEEK_SET);
 
-		f.data = (uint8_t*)malloc(f.size);
+		f.data = (byte*)malloc(f.size);
 		if (f.data)
 			fread(f.data, 1, f.size, file);
 		else
