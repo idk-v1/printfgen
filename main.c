@@ -10,12 +10,11 @@
 List(char, charList)
 List(char*, strList)
 
-strList parseTokens(charList list)
+strList tokenize(charList list)
 {
 	strList tokens = strList_create();
 
 	uint64_t count = 0;
-	uint64_t depth = 0;
 
 	bool whitespace = true;
 	bool slComment = false;
@@ -51,16 +50,7 @@ strList parseTokens(charList list)
 			break;
 
 		case '{':
-			if (slComment || mlComment);
-			else
-				depth++;
-			special = false;
-			break;
-
 		case '}':
-			if (slComment || mlComment);
-			else
-				depth--;
 			special = false;
 			break;
 
@@ -97,7 +87,24 @@ strList parseTokens(charList list)
 	return tokens;
 }
 
-static charList normFile(File* file)
+static void parseTokens(strList tokens)
+{
+	uint32_t depth = 0;
+	bool nameAtEnd = false;
+
+	char* type = NULL;
+	char* name = NULL;
+
+	// Loop
+
+	// Check if next token is "typedef"
+	// If so, get name from end
+	// Then check if token is "struct" or "union"
+	// If so and not typedef'd, get next token as name
+	//
+}
+
+static charList normalizeFile(File* file)
 {
 	charList newData = charList_create();
 
@@ -135,14 +142,17 @@ static charList normFile(File* file)
 int main()
 {
 	File file = readFile("HIDP_VALUE_CAPS.txt");
-	charList list = normFile(&file);
+	charList list = normalizeFile(&file);
 	freeFile(&file);
 
-	strList tokens = parseTokens(list);
+	strList tokens = tokenize(list);
 	charList_free(&list);
 
 	for (uint64_t i = 0; i < tokens.size; i++)
 		printf("%s\n", tokens.data[i]);
+
+	parseTokens(tokens);
+
 
 	for (uint64_t i = 0; i < tokens.size; i++)
 		if (tokens.data[i])
