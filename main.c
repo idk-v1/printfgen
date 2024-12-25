@@ -7,35 +7,43 @@
 
 #include "file.h"
 #include "list.h"
-List(char, charList)
+
+List(char, string)
 List(char*, strList)
 
-strList tokenize(charList list)
+List(uint8_t, u8List)
+List(void*, anyList)
+
+typedef struct tokenTree
+{
+	char* name;
+	uint64_t length;
+	u8List tokenTypes;
+	anyList tokens;
+} tokenTree;
+
+strList tokenize(string list)
 {
 	strList tokens = strList_create();
-
 	uint64_t count = 0;
-
 	bool whitespace = true;
 	bool slComment = false;
 	bool mlComment = false;
-	bool special = false;
 
 	for (uint64_t i = 0; i < list.size; i++)
 	{
-		special = true;
+		bool special = false;
 
 		switch (list.data[i])
 		{
 		case '/':
-			if (slComment || mlComment)
-				special = false;
-			else
+			if (!slComment && !mlComment)
 			{
 				if (list.data[i + 1] == '/')
 					slComment = true;
 				else if (list.data[i + 1] == '*')
 					mlComment = true;
+				special = true;
 			}
 			break;
 
@@ -44,14 +52,8 @@ strList tokenize(charList list)
 			{
 				mlComment = false;
 				whitespace = true;
+				special = true;
 			}
-			else
-				special = false;
-			break;
-
-		case '{':
-		case '}':
-			special = false;
 			break;
 
 		case '\n':
@@ -69,10 +71,8 @@ strList tokenize(charList list)
 				strList_push(&tokens, token);
 			}
 			whitespace = true;
+			special = true;
 			break;
-
-		default:
-			special = false;
 		}
 
 		if (!special && !(slComment || mlComment))
@@ -87,35 +87,34 @@ strList tokenize(charList list)
 	return tokens;
 }
 
-static void parseTokens(strList tokens)
+static tokenTree makeTree(strList tokens)
 {
-	uint32_t depth = 0;
-	bool nameAtEnd = false;
+	tokenTree tree = { 0 };
+	tree.tokens = anyList_create();
+	tree.tokenTypes = u8List_create();
 
-	char* type = NULL;
-	char* name = NULL;
+	for (uint64_t i = 0; i < tokens.size; i++)
+	{
 
-	// Loop
+	}
 
-	// Check if next token is "typedef"
-	// If so, get name from end
-	// Then check if token is "struct" or "union"
-	// If so and not typedef'd, get next token as name
-	//
+	return tree;
 }
 
-static charList normalizeFile(File* file)
+static string reformat(File* file)
 {
-	charList newData = charList_create();
+	string newData = string_create();
 
 	if (file)
 	{
 		for (uint64_t i = 0; i < file->size; i++)
 			switch (file->data[i])
 			{
+			// Fix crlf by ignoring it
 			case '\r':
 				break;
 
+			// Add space around special characters to make it easier later
 			case ',':
 			case ';':
 			case '*':
@@ -123,41 +122,62 @@ static charList normalizeFile(File* file)
 			case '}':
 			case '[':
 			case ']':
-				charList_push(&newData, ' ');
-				charList_push(&newData, file->data[i]);
-				charList_push(&newData, ' ');
+				string_push(&newData, ' ');
+				string_push(&newData, file->data[i]);
+				string_push(&newData, ' ');
 				break;
 
 			default:
-				charList_push(&newData, file->data[i]);
+				string_push(&newData, file->data[i]);
 			}
 
-		charList_push(&newData, 0);
+		string_push(&newData, 0);
 	}
 
 	return newData;
 }
 
 
+void tree_free(tokenTree* tree)
+{
+	for (uint64_t i = 0; i < tree->length; i++)
+	{
+		if (tree->tokenTypes.data[i] == 1)
+			tree_free(tree->tokens.data[i]);
+	}
+	basicList_free(&tree->tokenTypes);
+	basicList_free(&tree->tokens);
+	if (tree->name)
+		free(tree->name);
+
+	tree->length = 0;
+	tree->name = NULL;
+}
+
+void strList_free(strList* list)
+{
+	for (uint64_t i = 0; i < list->size; i++)
+#pragma warning(suppress: 6001) // MSVC wrongly reports this as using uninitialised variable.
+		if (list->data[i])
+			free(list->data[i]);
+	basicList_free(list);
+}
+
+
 int main()
 {
 	File file = readFile("HIDP_VALUE_CAPS.txt");
-	charList list = normalizeFile(&file);
+
+	string list = reformat(&file);
 	freeFile(&file);
 
 	strList tokens = tokenize(list);
-	charList_free(&list);
+	basicList_free(&list);
 
-	for (uint64_t i = 0; i < tokens.size; i++)
-		printf("%s\n", tokens.data[i]);
-
-	parseTokens(tokens);
-
-
-	for (uint64_t i = 0; i < tokens.size; i++)
-		if (tokens.data[i])
-			free(tokens.data[i]);
+	tokenTree tree = makeTree(tokens);
 	strList_free(&tokens);
+
+	tree_free(&tree);
 
 	return 0;
 }

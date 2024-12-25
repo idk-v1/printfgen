@@ -40,7 +40,8 @@ static void freeFile(File* file)
 {
 	if (file)
 	{
-		free(file->data);
+		if (file->data)
+			free(file->data);
 		file->data = NULL;
 		file->size = 0;
 	}
